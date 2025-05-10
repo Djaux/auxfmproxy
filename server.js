@@ -6,53 +6,26 @@ const app = express();
 
 app.get("/stream-url", async (req, res) => {
   try {
-    const intermediate = await axios.post(
-      "https://auxfmua.radio12345.com/openfire.ajax.php?radio_id=3350634",
-      {},
-      {
-        headers: {
-          "User-Agent": "Mozilla/5.0",
-          "Content-Type": "application/x-www-form-urlencoded"
-        }
-      }
-    );
-
-    const redirectUrl = intermediate.data.trim();
-
-    const final = await axios.get(redirectUrl, {
+    const response = await axios.get("https://auxfmua.radio12345.com/", {
       headers: {
         "User-Agent": "Mozilla/5.0"
       },
       responseType: "text"
     });
 
-    let html = final.data;
-    if (typeof html !== "string") {
-      html = String(html);
-    }
-    console.log("=== HTML START ===");
-    console.log(html);
-    console.log("RAW FINAL DATA:", final.data);
-    console.log("=== HTML END ===");
-    
+    const html = response.data;
     const $ = cheerio.load(html);
 
-    let mp3link = $("source").attr("src");
+    const mp3link = $("#urladdress").text().trim(); // <-- здесь ссылка!
 
-    if (!mp3link) {
-      const match = html.match(/https:\/\/.*?\.mp3[^\s"']+/);
-      if (match) mp3link = match[0];
-    }
-
-    if (mp3link) {
+    if (mp3link && mp3link.startsWith("http")) {
       res.json({ stream: mp3link });
     } else {
-      console.log("MP3 not found in response.");
       res.status(404).json({ error: "Stream link not found" });
     }
 
   } catch (e) {
-    console.error("Error fetching stream:", e.message);
+    console.error("Ошибка:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
