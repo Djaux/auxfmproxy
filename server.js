@@ -1,32 +1,21 @@
 const express = require("express");
 const axios = require("axios");
-const cheerio = require("cheerio");
 
 const app = express();
 
-app.get("/stream-url", async (req, res) => {
+app.get("/proxy-stream", async (req, res) => {
   try {
-    const response = await axios.get("https://auxfmua.radio12345.com/", {
-      headers: {
-        "User-Agent": "Mozilla/5.0"
-      },
-      responseType: "text"
+    const stream = await axios.get("http://uk3freenew.listen2myradio.com:7715/stream", {
+      responseType: "stream"
     });
 
-    const html = response.data;
-    const $ = cheerio.load(html);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Access-Control-Allow-Origin", "*"); // если нужно CORS
 
-    const mp3link = $("#urladdress").text().trim();
-
-    if (mp3link && mp3link.startsWith("http")) {
-      res.json({ stream: mp3link });
-    } else {
-      res.status(404).json({ error: "Stream link not found" });
-    }
-
+    stream.data.pipe(res);
   } catch (e) {
     console.error("Ошибка:", e.message);
-    res.status(500).json({ error: e.message });
+    res.status(500).send("Поток не доступен.");
   }
 });
 
