@@ -5,31 +5,30 @@ const app = express();
 
 app.get("/proxy-stream", async (req, res) => {
   try {
-    const stream = await axios.get("http://uk3freenew.listen2myradio.com:7715/stream", {
+    const response = await axios.get("http://uk3freenew.listen2myradio.com:7715/stream", {
       responseType: "stream",
-      timeout: 120000,
       headers: {
         "Icy-MetaData": "1",
         "User-Agent": "WinampMPEG/5.09"
-      }
+      },
+      timeout: 120000
     });
 
     res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Connection", "keep-alive");
-    res.setHeader("Transfer-Encoding", "chunked");
     res.setHeader("Access-Control-Allow-Origin", "*");
 
-    // завершение соединения при отключении клиента
+    // Если клиент закрыл соединение — завершаем
     req.on("close", () => {
-      if (stream && stream.data) stream.data.destroy();
+      if (response.data && response.data.destroy) {
+        response.data.destroy();
+      }
     });
 
-    stream.data.pipe(res);
-  } catch (e) {
-    console.error("Ошибка при подключении к Icecast:", e.message);
-    if (!res.headersSent) {
-      res.status(500).send("Ошибка при получении потока.");
-    }
+    response.data.pipe(res);
+
+  } catch (error) {
+    console.error("Ошибка при подключении к потоку:", error.message);
+    res.status(500).send("Не удалось подключиться к потоку.");
   }
 });
 
