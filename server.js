@@ -10,24 +10,33 @@ app.get("/proxy-stream", (req, res) => {
     path: "/stream",
     headers: {
       "Icy-MetaData": "1",
-      "User-Agent": "WinampMPEG/5.09"
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36",
+      "Accept": "*/*"
     }
   };
 
   const proxyReq = http.get(options, (streamRes) => {
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Access-Control-Allow-Origin", "*");
+    // важные заголовки, чтобы браузер нормально прочёл поток
+    res.writeHead(200, {
+      "Content-Type": "audio/mpeg",
+      "Connection": "keep-alive",
+      "Transfer-Encoding": "chunked",
+      "Accept-Ranges": "none",
+      "Access-Control-Allow-Origin": "*"
+    });
 
     streamRes.pipe(res);
   });
 
   proxyReq.on("error", (err) => {
     console.error("Ошибка при подключении к Icecast:", err.message);
-    res.status(500).send("Не удалось подключиться к потоку.");
+    if (!res.headersSent) {
+      res.status(500).send("Не удалось подключиться к потоку.");
+    }
   });
 
   req.on("close", () => {
-    proxyReq.destroy(); // если клиент уходит — закрываем
+    proxyReq.destroy(); // клиент ушёл — закрываем
   });
 });
 
