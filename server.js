@@ -18,6 +18,9 @@ app.get("/stream-url", async (req, res) => {
     );
 
     const html = response.data;
+    console.log("=== HTML start ===");
+    console.log(html);
+    console.log("=== HTML end ===");
     const $ = cheerio.load(html);
     const mp3link = $("source").attr("src") || html.match(/https:\/\/.*?\.mp3[^\s"']+/)?.[0];
 
