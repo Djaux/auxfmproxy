@@ -6,7 +6,7 @@ const app = express();
 
 app.get("/stream-url", async (req, res) => {
   try {
-    const response = await axios.post(
+    const intermediate = await axios.post(
       "https://auxfmua.radio12345.com/openfire.ajax.php?radio_id=3350634",
       {},
       {
@@ -17,10 +17,15 @@ app.get("/stream-url", async (req, res) => {
       }
     );
 
-    const html = response.data;
-    console.log("=== HTML start ===");
-    console.log(html);
-    console.log("=== HTML end ===");
+    const redirectUrl = intermediate.data.trim(); // это прямая ссылка на HTML
+
+    const final = await axios.get(redirectUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0"
+      }
+    });
+
+    const html = final.data;
     const $ = cheerio.load(html);
     const mp3link = $("source").attr("src") || html.match(/https:\/\/.*?\.mp3[^\s"']+/)?.[0];
 
@@ -31,6 +36,7 @@ app.get("/stream-url", async (req, res) => {
     }
 
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: e.message });
   }
 });
