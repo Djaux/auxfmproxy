@@ -30,7 +30,10 @@ app.get("/stream-url", async (req, res) => {
     if (typeof html !== "string") {
       html = String(html);
     }
-
+    console.log("=== HTML START ===");
+    console.log(html);
+    console.log("=== HTML END ===");
+    
     const $ = cheerio.load(html);
 
     let mp3link = $("source").attr("src");
