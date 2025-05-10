@@ -32,6 +32,7 @@ app.get("/stream-url", async (req, res) => {
     }
     console.log("=== HTML START ===");
     console.log(html);
+    console.log("RAW FINAL DATA:", final.data);
     console.log("=== HTML END ===");
     
     const $ = cheerio.load(html);
