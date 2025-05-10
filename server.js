@@ -6,7 +6,6 @@ const app = express();
 
 app.get("/stream-url", async (req, res) => {
   try {
-    // 1. Получаем редирект-ссылку
     const intermediate = await axios.post(
       "https://auxfmua.radio12345.com/openfire.ajax.php?radio_id=3350634",
       {},
@@ -20,7 +19,6 @@ app.get("/stream-url", async (req, res) => {
 
     const redirectUrl = intermediate.data.trim();
 
-    // 2. Получаем HTML с конечной страницы
     const final = await axios.get(redirectUrl, {
       headers: {
         "User-Agent": "Mozilla/5.0"
@@ -28,25 +26,29 @@ app.get("/stream-url", async (req, res) => {
       responseType: "text"
     });
 
-    const html = final.data;
+    let html = final.data;
+    if (typeof html !== "string") {
+      html = String(html);
+    }
+
     const $ = cheerio.load(html);
 
-    // 3. Ищем ссылку на .mp3
     let mp3link = $("source").attr("src");
+
     if (!mp3link) {
       const match = html.match(/https:\/\/.*?\.mp3[^\s"']+/);
       if (match) mp3link = match[0];
     }
 
-    // 4. Отдаём результат или ошибку
     if (mp3link) {
       res.json({ stream: mp3link });
     } else {
+      console.log("MP3 not found in response.");
       res.status(404).json({ error: "Stream link not found" });
     }
 
   } catch (e) {
-    console.error(e);
+    console.error("Error fetching stream:", e.message);
     res.status(500).json({ error: e.message });
   }
 });
